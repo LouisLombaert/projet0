@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 uint8_t SIZE = 16;
-uint8_t HEAP[16]; // 8 * 16
+uint8_t HEAP[16]; 
 
 //uint8_t MY_HEAP[64000];  --> real heap
  
@@ -18,87 +18,36 @@ void print_block(uint8_t block) {
     }
 }
 
-uint8_t reset_lsb(uint8_t x) { 
-    return x &= (x-1);
-}
-
-uint8_t set_lsb_used(int8_t x) { //  Set le dernier bit a 1 (met le flag)
-    return x |= 1;
-}
-
-uint8_t set_lsb_free(uint8_t x) { // Set le dernier bit a 0 (retire le flag)
-    return x &= ~1;
-}
-
-
 void *my_malloc(size_t size) {
+    uint8_t adjust = (size % 2) ? 1 : 2; // +1 ou 2 block en plus si pair ou impair
+
     for (int i = 0; i < SIZE/2; i++) {
-        printf("Number at HEAP[%d]: %u\n",i, HEAP[i]);
+        //printf("Number at HEAP[%d]: %u\n",i, HEAP[i]);  // DELETE
+
         if((HEAP[i] & 0b1) == 0) { // Reg si le block est free
 
-                if(size % 2 == 0) { // +2
+            if(HEAP[i] >= size+adjust) { // Reg si assez de place (size + ajustement + metadonné)
+                
+                HEAP[i+adjust+size] = HEAP[i] - (size+adjust); // Prochain block de metadonné -> taille de ce block - size
 
-                    if(HEAP[i] >= size+2) { // Reg si taille suffisante
+                printf("MALLOC\n");
+                printf("UTILISE %ld case\n", size+adjust);
 
-                        // Prochain Metadonné-> size
-                        printf("Avant set flag a HEAP[%lu] %u\n", i+2+size, HEAP[i+2+size]);
-                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
+                HEAP[i] = size+adjust;
+                HEAP[i] |= 1; // Metadonnée -> flag a 1
 
-                        printf("%d - (%d + 2)\n", HEAP[i], size);
-                        HEAP[i+2+size] = HEAP[i] - (size+2);                    
-
-                        printf("Apres set flag a HEAP[%lu] %u\n",  i+2+size, HEAP[i+2+size]);
-
-                        printf("MALLOC\n");
-                        printf("UTILISE %ld case\n", size+2);
-                        
-                        // Metadonnée -> flag a 1
-                        HEAP[i] = set_lsb_used(HEAP[i]);
-                        
-
-                        // return pointer
-                        
-
-                        break;
-                    }
-
-
-                } else { // +1
-
-                    if(HEAP[i] >= size+1) { // Reg si taille suffisante
-
-                        // Prochain Metadonné-> size
-                        printf("Avant set flag a HEAP[%lu] %u\n", i+1+size, HEAP[i+1+size]);
-                        print_block(HEAP[i+1+size]);
-                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
-
-                        printf("%d - (%d + 1)\n", HEAP[i], size);
-                        HEAP[i+1+size] = HEAP[i] - (size+1);                    
-
-                        printf("Apres set flag a HEAP[%lu] %u\n",  i+1+size, HEAP[i+1+size]);
-                        print_block(HEAP[i+1+size]);
-
-                        printf("MALLOC\n");
-                        printf("UTILISE %ld case\n", size+1);
-                        
-                        // Metadonnée -> flag a 1
-                        HEAP[i] = set_lsb_used(HEAP[i]);
-                        
-                        // return pointer
-
-                        
-                        
-                        break;
-                    }
-
-                }
-            
+                // return pointer
+                return &HEAP[i+1];
+            }            
                    
         } else {
-            printf("RESET %u\n", reset_lsb(HEAP[i])); 
-            i += reset_lsb(HEAP[i]) -1; // JUMP DE n BLOCK
+            printf("MUST JUMP OF %u BLOCKS\n", HEAP[i] -1);
+            i += (HEAP[i]-1); // JUMP DE n BLOCK (-1 pcq le block est utilisé donc LSB=1 alors que la taille est multiple de 2)
         }
     }
+
+    printf("No place available\n");
+    return NULL;
     
 }
 
@@ -106,23 +55,34 @@ int main(int argc, char const *argv[])
 {
     init_memory();
 
-    HEAP[0] = 0b0010000; // 4 block utilisé
-    HEAP[1] = 0b0000000; // donnée 
-    HEAP[2] = 0b0000011; // donnée
-    HEAP[3] = 0b0000000; // donnée
-    HEAP[4] = 0b1001110; // 12 Block free 
-    HEAP[5] = 0b1000000; // block free
+    HEAP[0] = 0b00000100; // 4 free
+    HEAP[1] = 0b00000001; // unused data.
+    HEAP[2] = 0b00000010; // unused data.
+    HEAP[3] = 0b00000011; // unused data.
 
-    // de HEAP[6] -> HEAP[16] : free 
+    HEAP[4] = 0b00000011; // 2 used
+    HEAP[5] = 0b11111111; // used data
 
-    my_malloc(sizeof(uint8_t)*4);
+    HEAP[6] = 0b00001010; // 10 free
+    // de HEAP[7] -> HEAP[15] : unused data 
 
-/*     print_block(HEAP[0]);
-    print_block(HEAP[3]);
-    print_block(HEAP[4]); */
 
-   // HEAP[0] = 0b0001000;
-   // print_block(HEAP[0]);
+    void* allocated_ptr = my_malloc(sizeof(uint8_t) * 4);
+    HEAP[7] = 0b11111111;  // used data
+    HEAP[8] = 0b11111111;  // used data
+    HEAP[9] = 0b11111111;  // used data
+    HEAP[10] = 0b11111111; // used data
+
+    uint8_t* data = (uint8_t*) allocated_ptr;
+
+    printf("Data malloced\n");
+    for (int i = 0; i < 4; i++) {
+        printf("Printing %d-th block of the malloc one.\n", i);
+        print_block(data[i]);
+    }
+
+    printf("Printing [12]\n");
+    print_block(HEAP[12]); // 00000100 ?
     
     return 0;
 }

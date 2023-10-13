@@ -39,7 +39,15 @@ void *my_malloc(size_t size) {
                 if(size % 2 == 0) { // +2
 
                     if(HEAP[i] >= size+2) { // Reg si taille suffisante
-                        int last_size = HEAP[i];
+
+                        // Prochain Metadonné-> size
+                        printf("Avant set flag a HEAP[%lu] %u\n", i+2+size, HEAP[i+2+size]);
+                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
+
+                        printf("%d - (%d + 2)\n", HEAP[i], size);
+                        HEAP[i+2+size] = HEAP[i] - (size+2);                    
+
+                        printf("Apres set flag a HEAP[%lu] %u\n",  i+2+size, HEAP[i+2+size]);
 
                         printf("MALLOC\n");
                         printf("UTILISE %ld case\n", size+2);
@@ -48,17 +56,8 @@ void *my_malloc(size_t size) {
                         HEAP[i] = set_lsb_used(HEAP[i]);
                         
 
-                        // Prochain Metadonné-> size
-                        printf("Avant set flag a HEAP[%lu] %u\n", i+2+size, HEAP[i+2+size]);
-                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
-
-                        printf("%d - (%d + 2)\n", last_size, size);
-                        HEAP[i+2+size] = last_size - (size+2);                    
-
-                        printf("Apres set flag a HEAP[%lu] %u\n",  i+2+size, HEAP[i+2+size]);
-
                         // return pointer
-
+                        
 
                         break;
                     }
@@ -67,7 +66,17 @@ void *my_malloc(size_t size) {
                 } else { // +1
 
                     if(HEAP[i] >= size+1) { // Reg si taille suffisante
-                        int last_size = HEAP[i];
+
+                        // Prochain Metadonné-> size
+                        printf("Avant set flag a HEAP[%lu] %u\n", i+1+size, HEAP[i+1+size]);
+                        print_block(HEAP[i+1+size]);
+                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
+
+                        printf("%d - (%d + 1)\n", HEAP[i], size);
+                        HEAP[i+1+size] = HEAP[i] - (size+1);                    
+
+                        printf("Apres set flag a HEAP[%lu] %u\n",  i+1+size, HEAP[i+1+size]);
+                        print_block(HEAP[i+1+size]);
 
                         printf("MALLOC\n");
                         printf("UTILISE %ld case\n", size+1);
@@ -75,18 +84,6 @@ void *my_malloc(size_t size) {
                         // Metadonnée -> flag a 1
                         HEAP[i] = set_lsb_used(HEAP[i]);
                         
-
-                        // Prochain Metadonné-> size
-                        printf("Avant set flag a HEAP[%lu] %u\n", i+1+size, HEAP[i+1+size]);
-                        print_block(HEAP[i+1+size]);
-                        //HEAP[i+1+size] = set_lsb_free(HEAP[i+1+size]);
-
-                        printf("%d - (%d + 1)\n", last_size, size);
-                        HEAP[i+1+size] = last_size - (size+1);                    
-
-                        printf("Apres set flag a HEAP[%lu] %u\n",  i+1+size, HEAP[i+1+size]);
-                        print_block(HEAP[i+1+size]);
-
                         // return pointer
 
                         

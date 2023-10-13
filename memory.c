@@ -23,13 +23,22 @@ uint8_t reset_lsb(uint8_t x) {
 }
 
 void *my_malloc(size_t size) {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < SIZE/2; i++) {
         printf("Number at HEAP[%d]: %u\n",i, HEAP[i]);
-        if((HEAP[i] & 0b1) == 1) {
+        if((HEAP[i] & 0b1) == 0) {
+            // MALLOC
+            printf("MALLOC");
+            break;
+        } else {
             printf("%u\n", HEAP[i]);
-            printf("RESET %u\n", reset_lsb(HEAP[i]));
+            printf("RESET %u\n", reset_lsb(HEAP[i])); // JUMP DE n BLOCK
+            i += reset_lsb(HEAP[i]);
+            i--;
         }
+        // FREE DONC -> MALLOC
     }
+
+
     
 
   /*   while ((HEAP[index] & 0b1) == 1) {
@@ -40,18 +49,16 @@ void *my_malloc(size_t size) {
 
 }
 
-
-
-
-
 int main(int argc, char const *argv[])
 {
     init_memory();
 
-    HEAP[0] = 0b0001000; // 8
-    HEAP[1] = 0b0001001; // 9
-    HEAP[2] = 0b0001011; // 11
-    HEAP[3] = 0b1001001; // 137
+    HEAP[0] = 0b0000101; // 2 block free
+    HEAP[1] = 0b0000000; // block free -> donnée osef
+    HEAP[2] = 0b0000011; // 2 block free
+    HEAP[3] = 0b0000000; // block free -> donnée osef
+    HEAP[4] = 0b0000010; // 2 Block utilisé 
+    HEAP[5] = 0b1000000; // block utilisé, donnée = 128 
 
     my_malloc(sizeof(uint8_t));
 

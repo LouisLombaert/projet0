@@ -18,11 +18,21 @@ void print_block(uint8_t block) {
     }
 }
 
+uint8_t reset_lsb(uint8_t x) {
+    return x &= (x-1);
+}
+
 void *my_malloc(size_t size) {
-    int index = 0;
+    for (int i = 0; i < 8; i++) {
+        printf("Number at HEAP[%d]: %u\n",i, HEAP[i]);
+        if((HEAP[i] & 0b1) == 1) {
+            printf("%u\n", HEAP[i]);
+            printf("RESET %u\n", reset_lsb(HEAP[i]));
+        }
+    }
     
 
-    /*while ((HEAP[index] & 0b1) == 1) {
+  /*   while ((HEAP[index] & 0b1) == 1) {
         
         index 
     } */
@@ -30,36 +40,7 @@ void *my_malloc(size_t size) {
 
 }
 
-void reset(uint8_t x) {
-    printf("%u\n", (x | (1 << 7)));
 
-}
-
-/* uint64_t set_bit(uint64_t x, int pos, bool value) {
-    if(value) {
-        return x | (value << pos);
-    } else {
-        return x & (value << pos);
-    }
-} */
-
-
-uint8_t r_big(uint8_t x) {
-    return x &= (x-1);
-
-    uint8_t b = 1 << 7;
-    
-    for (int i = 0; i < 8; i++) {
-        if (x & b) {
-            x ^= b;  
-            break;  
-        }
-        b >>= 1;    
-    }
-
-    return x;
-    printf("%d\n", x);
-}
 
 
 
@@ -67,10 +48,17 @@ int main(int argc, char const *argv[])
 {
     init_memory();
 
-    uint8_t a = r_big(0b00000001);
-    uint8_t b = r_big(0b10000001);
-    uint8_t c = r_big(0b11111110);
-    uint8_t d = r_big(0b00001111);
+    HEAP[0] = 0b0001000; // 8
+    HEAP[1] = 0b0001001; // 9
+    HEAP[2] = 0b0001011; // 11
+    HEAP[3] = 0b1001001; // 137
+
+    my_malloc(sizeof(uint8_t));
+
+    /* uint8_t a = reset_lsb(0b00000001);
+    uint8_t b = reset_lsb(0b10000001);
+    uint8_t c = reset_lsb(0b11111110);
+    uint8_t d = reset_lsb(0b00001111);
 
     print_block(a);
     printf("\nNow b\n");
@@ -79,15 +67,9 @@ int main(int argc, char const *argv[])
     print_block(c);
     printf("\nNow d\n");
     print_block(d);
-
-    /* reset(0b00000001); // 1
-    reset(0b11111110); // 255
-    reset(0b11110000); // 
-    reset(0b00001111); // 15
-    reset(0b01010101); // 
-
+ */
    // HEAP[0] = 0b0001000;
-    print_block(HEAP[0]); */
+   // print_block(HEAP[0]);
     
     return 0;
 }

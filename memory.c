@@ -51,6 +51,31 @@ void *my_malloc(size_t size) {
     
 }
 
+void free_memory(int idx){
+    //idx: index du premier bloc DE DONÉE
+    //vérif si i == 0 ?
+    printf("flag: %d\n", HEAP[idx-1] & 0x01);
+    if (HEAP[idx-1] & 0x01){
+        
+        printf("avant free: %u\n", HEAP[idx-1]);
+        HEAP[idx-1] = HEAP[idx-1] & 0xFFFFFFFE;  //bloc de métadonée, on passe le flag 0
+        printf("apres free: %u\n", HEAP[idx-1]);
+        uint8_t next = HEAP[HEAP[idx-1]+idx-1];
+        printf("prochain bloc de metadonee (HEAP[%d]): %u\n", HEAP[idx-1]+idx-1, next);
+        //répéter cette action tanq que la prochaine zone n'est pas libre
+        while (!(next & 0x01)){ //prochaine zone libre ?
+            //Fusion 
+            HEAP[idx-1] = HEAP[idx-1] + next;
+            next = HEAP[HEAP[idx-1]+idx-1];
+            printf("Fusion, nouvelle taille: %u. Prochain bloc de metadonee (HEAP[%d]): %u\n", HEAP[idx-1], HEAP[idx-1]+idx-1, next);
+        }
+    }
+    else {
+        //on vérifie que la zone n'est pas déjà libre
+        printf("Already free");
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     init_memory();
@@ -63,26 +88,30 @@ int main(int argc, char const *argv[])
     HEAP[4] = 0b00000011; // 2 used
     HEAP[5] = 0b11111111; // used data
 
-    HEAP[6] = 0b00001010; // 10 free
+    HEAP[6] = 0b00000010; // 2 free
     // de HEAP[7] -> HEAP[15] : unused data 
 
 
-    void* allocated_ptr = my_malloc(sizeof(uint8_t) * 4);
+    //void* allocated_ptr = my_malloc(sizeof(uint8_t) * 4);
     HEAP[7] = 0b11111111;  // used data
-    HEAP[8] = 0b11111111;  // used data
+    HEAP[8] = 0b00000010;  // used data
     HEAP[9] = 0b11111111;  // used data
     HEAP[10] = 0b11111111; // used data
 
-    uint8_t* data = (uint8_t*) allocated_ptr;
+    //uint8_t* data = (uint8_t*) allocated_ptr;
 
-    printf("Data malloced\n");
+    /*printf("Data malloced\n");
     for (int i = 0; i < 4; i++) {
         printf("Printing %d-th block of the malloc one.\n", i);
         print_block(data[i]);
-    }
+    }*/
 
-    printf("Printing [12]\n");
-    print_block(HEAP[12]); // 00000100 ?
+    /*printf("Printing [12]\n");
+    print_block(HEAP[12]); // 00000100 ?*/
+
+    //test free
+    //free_memory(1); //working
+    free_memory(5);
     
     return 0;
 }

@@ -18,6 +18,43 @@ void print_block(uint8_t block) {
     }
 }
 
+
+void print_memory(uint8_t heap[]) {
+    printf("+");
+    for (int i = 0; i < SIZE; i++) {
+        printf("-------+");
+    }
+    printf("\n|");
+
+    int i = 0;
+    while (i < SIZE) {
+        // Determine the number of total blocks and data blocks for the current allocation
+        int total_blocks = heap[i] - 1; // Including the metadata block
+        int data_blocks = total_blocks - 1; // Excluding the metadata block
+
+        if (heap[i] & 1) {  // Used block
+            printf(" %03dU |", total_blocks);
+        } else {  // Free block
+            printf(" %03dF |", total_blocks);
+        }
+
+        // Move to the next metadata block
+        i++;
+        for (int j = 1; j <= data_blocks; j++, i++) {
+            if (i < SIZE) {
+                printf("  /    |");
+            }
+        }
+    }
+
+    printf("\n");
+    for (int i = 0; i < SIZE; i++) {
+        printf("+-------");
+    }
+    printf("+\n");
+}
+
+
 void *my_malloc(size_t size) {
     uint8_t adjust = (size % 2) ? 1 : 2; // +1 ou 2 block en plus si pair ou impair
 
@@ -30,13 +67,11 @@ void *my_malloc(size_t size) {
                 
                 HEAP[i+adjust+size] = HEAP[i] - (size+adjust); // Prochain block de metadonné -> taille de ce block - size
 
-                printf("MALLOC\n");
-                printf("UTILISE %ld case\n", size+adjust);
+                printf("MALLOC UTILISE %ld case\n", size+adjust);
 
                 HEAP[i] = size+adjust;
                 HEAP[i] |= 1; // Metadonnée -> flag a 1
 
-                // return pointer
                 return &HEAP[i+1];
             } else {
                 printf("NO PLACE, JUMP OF %u BLOCKS\n", HEAP[i]-1);
@@ -82,26 +117,58 @@ void free_memory(int idx){
 void my_free(void *ptr) {
     if(ptr == NULL) return; // check au cas ou
 
-    uint8_t* metadata = ((uint8_t*)ptr) - 1; // Recup de metadata
+    uint8_t* metadata_ptr = ((uint8_t*)ptr) - 1; // Recup de metadata
+   // uint8_t data = (uint8_t*) ptr; // Recup des data
 
-    print_block(*metadata);
+    if (!(*metadata_ptr & 1)) { // Check si c'est deja free
+        printf("Warning: Double free detected.\n");
+        return;
+    }
+
+    uint8_t total = *metadata_ptr;
+
+    metadata_ptr += *metadata_ptr;
+
+    while ((*metadata_ptr & 1) == 0 && metadata_ptr < SIZE + HEAP) {
+        total += *metadata_ptr;
+        metadata_ptr += *metadata_ptr;
+    }
+
+    *metadata_ptr = total;
+
+    printf("Total: %u\n", total);
+
+
+/*     printf("Trying printing HEAP[12]\n");
+    print_block(*metadata_ptr); */
 }
 
 int main(int argc, char const *argv[])
 {
     init_memory();
 
+    print_memory(HEAP);
+
     my_malloc(sizeof(uint8_t) * 3);
     HEAP[1] = 0b00000001; // unused data.
     HEAP[2] = 0b00000010; // unused data.
     HEAP[3] = 0b00000011; // unused data.
 
+    print_memory(HEAP);
+
     my_malloc(sizeof(uint8_t));
     HEAP[5] = 0b11111111; // used data
+
+    print_memory(HEAP);
 
     // de HEAP[6] -> HEAP[15] : unused data 
 
     void* allocated_ptr = my_malloc(sizeof(uint8_t) * 4);
+
+    void* other_malloc = my_malloc(sizeof(uint8_t)); // +1 block (1 meta + 1 data)
+
+    my_malloc(sizeof(uint8_t));
+    my_malloc(sizeof(uint8_t));
 
     if(allocated_ptr) { // Au cas ou ya plus de place (return null)
         uint8_t* data = (uint8_t*) allocated_ptr;
@@ -118,10 +185,18 @@ int main(int argc, char const *argv[])
         } */
     }
 
-    //test free
-    //free_memory(1); //working
-    //free_memory(5);
-    my_free(allocated_ptr);
+    printf("Free\n");
+    my_free(other_malloc);
+    my_free(allocated_ptr); // 4 block: 1 metdonné + 4 donné + 1 vide
+     // 2 next to up
+
+    /* for (int i = 0; i < 10; i++) {
+        printf("Show HEAP[%d]\n", (i+5));
+        print_block(HEAP[i+5]);
+    } */
+
+    //my_malloc(sizeof(uint8_t)*5);
+    
     
     return 0;
 }

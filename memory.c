@@ -74,12 +74,12 @@ void *my_malloc(size_t size) {
 
                 return &HEAP[i+1];
             } else {
-                printf("NO PLACE, JUMP OF %u BLOCKS\n", HEAP[i]-1);
+                //printf("NO PLACE, JUMP OF %u BLOCKS\n", HEAP[i]-1); // DELETE
                 i += (HEAP[i]-1); // JUMP DE n BLOCK (-1 pcq ca fait +1 au debut de la boucle)
             }           
                    
         } else {
-            printf("NOT FREE, JUMP OF %u BLOCKS\n", HEAP[i]-2); // DELETE
+            //printf("NOT FREE, JUMP OF %u BLOCKS\n", HEAP[i]-2); // DELETE
             i += (HEAP[i]-2); // JUMP DE n BLOCK (-1 pcq le block est utilisé donc LSB=1 alors que la taille est multiple de 2) (-1 pcq ca fait +1 au debut de la boucle)
         }
     }
@@ -118,29 +118,26 @@ void my_free(void *ptr) {
     if(ptr == NULL) return; // check au cas ou
 
     uint8_t* metadata_ptr = ((uint8_t*)ptr) - 1; // Recup de metadata
-   // uint8_t data = (uint8_t*) ptr; // Recup des data
 
     if (!(*metadata_ptr & 1)) { // Check si c'est deja free
         printf("Warning: Double free detected.\n");
         return;
     }
 
+    *metadata_ptr &= ~1;
+
+    uint8_t* current_ptr = metadata_ptr;
     uint8_t total = *metadata_ptr;
 
-    metadata_ptr += *metadata_ptr;
+    while ((current_ptr - HEAP + total) < SIZE) {
+        uint8_t* next_metadata_ptr = current_ptr + total;
 
-    while ((*metadata_ptr & 1) == 0 && metadata_ptr < SIZE + HEAP) {
-        total += *metadata_ptr;
-        metadata_ptr += *metadata_ptr;
+        if (*next_metadata_ptr & 1) { break; } // next block is used, so stop merging
+
+        total += (*next_metadata_ptr & ~1);  // Add size
     }
 
     *metadata_ptr = total;
-
-    printf("Total: %u\n", total);
-
-
-/*     printf("Trying printing HEAP[12]\n");
-    print_block(*metadata_ptr); */
 }
 
 int main(int argc, char const *argv[])
@@ -150,18 +147,7 @@ int main(int argc, char const *argv[])
     print_memory(HEAP);
 
     my_malloc(sizeof(uint8_t) * 3);
-    HEAP[1] = 0b00000001; // unused data.
-    HEAP[2] = 0b00000010; // unused data.
-    HEAP[3] = 0b00000011; // unused data.
-
-    print_memory(HEAP);
-
     my_malloc(sizeof(uint8_t));
-    HEAP[5] = 0b11111111; // used data
-
-    print_memory(HEAP);
-
-    // de HEAP[6] -> HEAP[15] : unused data 
 
     void* allocated_ptr = my_malloc(sizeof(uint8_t) * 4);
 
@@ -177,26 +163,22 @@ int main(int argc, char const *argv[])
         for (int i = 0; i < 4; i++) {
             data[i] = 0b11111111;
         }
-
-        /* printf("Data malloced\n");
-        for (int i = 0; i < 4; i++) {
-            printf("Printing %d-th block of the malloc one.\n", i);
-            print_block(data[i]);
-        } */
     }
+
+    print_memory(HEAP);
 
     printf("Free\n");
     my_free(other_malloc);
+
+    print_memory(HEAP);
+
     my_free(allocated_ptr); // 4 block: 1 metdonné + 4 donné + 1 vide
-     // 2 next to up
-
-    /* for (int i = 0; i < 10; i++) {
-        printf("Show HEAP[%d]\n", (i+5));
-        print_block(HEAP[i+5]);
-    } */
-
-    //my_malloc(sizeof(uint8_t)*5);
     
+    print_memory(HEAP);
+
+    my_malloc(sizeof(uint8_t)*7);
+
+    print_memory(HEAP);
     
     return 0;
 }

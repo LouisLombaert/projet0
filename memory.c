@@ -93,7 +93,7 @@ void free_memory(int idx){
     //idx: index du premier bloc DE DONÉE
     //vérif si i == 0 ?
     printf("flag: %d\n", HEAP[idx-1] & 0x01);
-    if (HEAP[idx-1] & 0x01){
+    if (HEAP[idx-1] & 0x01){/*  */
         
         printf("avant free: %u\n", HEAP[idx-1]);
         HEAP[idx-1] = HEAP[idx-1] & 0xFFFFFFFE;  //bloc de métadonée, on passe le flag 0
@@ -124,7 +124,7 @@ void my_free(void *ptr) {
         return;
     }
 
-    *metadata_ptr &= ~1;
+    *metadata_ptr &= ~1; // Reset le flag
 
     uint8_t* current_ptr = metadata_ptr;
     uint8_t total = *metadata_ptr;
